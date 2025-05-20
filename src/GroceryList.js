@@ -1,79 +1,131 @@
 import { Component } from "react";
 import bag from './bag.png'
+import jsPDF from 'jspdf';
 
 export class GroceryList extends Component {
-    state = {  // the state of what will change
-        userInput: "", // the text that the user enters into the input will change, so we write an empty string
-        groceryList: [] // here we will have an array (list) of user-entered cases and this will be added to one array
+    state = {
+        userInput: "",
+        groceryList: [],
+        user: "",
+        date: new Date().toISOString().split('T')[0]
+    }
+
+    componentDidMount() {
+        this.fetchGroceryLists();
+    }
+
+    async fetchGroceryLists() {
+        try {
+            const response = await fetch('http://localhost:5000/api/grocery-lists');
+            const data = await response.json();
+            this.setState({ listHistory: data });
+        } catch (error) {
+            console.error('Error fetching grocery lists:', error);
+        }
     }
 
     onChangeEvent(e) {
-        this.setState({userInput: e});  // changes in Input, which is equal to e - find out what exactly the user writes in the input - equate it to an event (click, text change, etc.)
-    //    console.log(e)
+        this.setState({userInput: e});
     }
 
     addItem(input) {
         if(input === '') {
             alert ("Please enter an item");
         } else {
-        let listArray = this.state.groceryList;  // a variable that creates a list where all our cases will be placed
-        listArray.push(input)  // push() - a method that adds what the user writes (input) to the end of the array
-        this.setState({ groceryList: listArray, userInput: '' }) // equals to list Array, user Input equals to an empty string - empty the input after entering text
-   //console.log(listArray)
-
-    // When there are many elements, it is necessary to add an array - the place where we will store all these elements
+            let listArray = this.state.groceryList;
+            listArray.push(input);
+            this.setState({ groceryList: listArray, userInput: '' });
+        }
     }
-}
-
-// Write a function for the DELETE button
 
     deleteItem() {
-        let listArray = this.state.groceryList;  // get access to what we have in the array
-        listArray = []; // empty array = to empty array
-        this.setState({groceryList: listArray})
+        this.setState({groceryList: []});
     }
 
-    // write the function that strikeout the element when clicked
-    crossedword(event) {  // event - as soon as we have something dependent on li (here this event is a click), we will assume this using event.target
+    crossedword(event) {
         const li = event.target;
-        li.classList.toggle("crossed"); // toggle - adds the class if it doesn't exist and removes the class if it exists
+        li.classList.toggle("crossed");
     }
 
-    // Working on the ENTER button | put all the content in the <form></form>
     onFormSubmit(e) {
         e.preventDefault();
     }
+
+    saveList = () => {
+        const { groceryList } = this.state;
+        if (groceryList.length === 0) {
+            alert("No items to save!");
+            return;
+        }
+        localStorage.setItem('savedGroceryList', JSON.stringify(groceryList));
+        alert("List saved!");
+    };
+
+    downloadList = () => {
+        let groceryList = this.state.groceryList;
+        let date = this.state.date || new Date().toISOString().split('T')[0];
+        if (groceryList.length === 0) {
+            // Try to get from localStorage if not in state
+            const saved = localStorage.getItem('savedGroceryList');
+            if (saved) {
+                groceryList = JSON.parse(saved);
+            }
+        }
+        if (!groceryList || groceryList.length === 0) {
+            alert("No items to download!");
+            return;
+        }
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text(`Grocery List (${date})`, 10, 15);
+        let y = 30;
+        groceryList.forEach((item, index) => {
+            doc.setFontSize(14);
+            doc.text(`${index + 1}. ${item}`, 10, y);
+            y += 10;
+            if (y > 270) {
+                doc.addPage();
+                y = 20;
+            }
+        });
+        doc.save(`grocery-list-${date}.pdf`);
+    };
 
     render() {
         return (
             <div>
                 <form onSubmit={this.onFormSubmit}>
-                <div className="container">
-                    <input type="text"
-                    placeholder="What do you want to buy today?"
-                    onChange={(e) => {this.onChangeEvent(e.target.value)}} // allows you to see in the console the text that the user enters into the input
-                    value={this.state.userInput} />   {/* find out the value of what exactly the user enters into the input */}
-                </div>
-                <div className="container">
-                    <button onClick={() => this.addItem(this.state.userInput)} className="btn add">Add</button>   
-                     {/* addItem - each click adds a new element = this.state.userInput*/}
-                </div>
-                {/* we need to access every element of our array and we need to map each element and for this we use the map function - takes up to 3 arguments */}
-                <ul> 
-                    {this.state.groceryList.map((item, index) => (  // index - each element appears under its own individual serial number, which will become its unique key
-                        <li onClick={this.crossedword} key={index}>
-                            <img src={bag} className="bag" alt="bag" />
-                            {item}</li>
-                    ))} 
-                    
-                </ul>
-                <div className="container">
-                    <button onClick={() => this.deleteItem()} className="btn delete">Delete</button>
-                </div>
+                    <div className="container">
+                        <input
+                            type="date"
+                            value={this.state.date}
+                            onChange={e => this.setState({ date: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <div className="container">
+                        <input type="text"
+                        placeholder="What do you want to buy today?"
+                        onChange={(e) => {this.onChangeEvent(e.target.value)}}
+                        value={this.state.userInput} />
+                    </div>
+                    <div className="container">
+                        <button onClick={() => this.addItem(this.state.userInput)} className="btn add">Add</button>
+                        <button type="button" onClick={this.saveList} className="btn save">Save</button>
+                        <button type="button" onClick={this.downloadList} className="btn download">Download</button>
+                    </div>
+                    <ul> 
+                        {this.state.groceryList.map((item, index) => (
+                            <li onClick={this.crossedword} key={index}>
+                                <img src={bag} className="bag" alt="bag" />
+                                {item}</li>
+                        ))} 
+                    </ul>
+                    <div className="container">
+                        <button onClick={() => this.deleteItem()} className="btn delete">Delete</button>
+                    </div>
                 </form>
             </div>
         )
     }
-
 }
-
