@@ -9,3 +9,7 @@ Main features:
 - Backend API for saving and retrieving lists
 
 Built with React, Node.js, Express, and MongoDB.
+
+# Live Demo
+
+Check out the deployed app here: [https://grocery-list-react-nu.vercel.app/](https://grocery-list-react-nu.vercel.app/)
