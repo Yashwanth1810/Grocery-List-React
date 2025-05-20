@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div>
   <h1>Grocery List</h1> 
   <img src="Grocery.JPG" alt="" width="auto">
@@ -41,3 +42,6 @@ You may also see any lint errors in the console.
 <p>User can add as many items as he wants and can also remove them.</p>
 
 Project Link: https://github.com/kateFrontend/Grocery-List
+=======
+# Grocery-List-React
+>>>>>>> d030f99deacfae81d3b13212c1d2e6ccff16df0b
